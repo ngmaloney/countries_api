@@ -1,0 +1,4 @@
+; $Id$
+name = "Country codes API"
+description = "This module provides an API for official ISO 3166 country codes and names."
+package = "Location"

@@ -1,0 +1,239 @@
+<?php
+// $Id: countries_api.module,v 1.1 2007/12/13 12:33:11 horsconcept Exp $
+
+/**
+ * Implementation of hook_help()
+ * TODO: Refactor help so it is a seperate include (to make more manageable)
+ */
+function countries_api_help($section = '') {
+  // license path
+  $license = drupal_get_path('module', 'countries_api') . '/LICENSE.txt';
+
+  // switch over section
+  switch($section) {
+    // module
+    case 'admin/help#countries_api':
+      $content = "Help Section Coming Soon";
+    break;
+  }
+  return $content;
+}
+
+/**
+ * ISO 3166-1-alpha-#n code to country API function
+ * @param $code 
+ *  An string containg the iso3 value
+ * @return string
+ *  Returns an array containing the country fields
+ */
+function countries_api_get_country($code) {
+  if(strlen(trim($code)) == 2) {
+    return countries_api_iso2_get_country($code);
+  } elseif(strlen(trim($code)) == 3) {
+    return countries_api_iso3_get_country($code);
+  } else {
+    return null;
+  }
+}
+
+/**
+ * ISO 3166-1-alpha-2 code to country API function
+ * @param $code 
+ *  An string containg the iso3 value
+ * @return string
+ *  Returns an array containing the country fields
+ */
+function countries_api_iso2_get_country($code) {
+  return _countries_api_iso_get_country($code, 'iso2');
+}
+
+/**
+ * ISO 3166-1-alpha-3 code to country API function
+ * @param $code 
+ *  An string containg the iso3 value
+ * @return string
+ *  Returns an array containing the country fields
+ */
+function countries_api_iso3_get_country($code) {
+  return _countries_api_iso_get_country($code, 'iso3');
+}
+
+/**
+ * ISO 3166-1-alpha-#n code to country name API function
+ * @param $code 
+ *  Either an iso2 or iso3 Country Code to search by.
+ * @return string
+ *  Returns country name as string.
+ */
+function countries_api_get_name($code) {
+  if(strlen(trim($code)) == 2) {
+    return countries_api_iso2_get_name($code);
+  } elseif(strlen(trim($code)) == 3) {
+    return countries_api_iso3_get_name($code);
+  } else {
+    return null;
+  }
+}
+
+/**
+ * ISO 3166-1-alpha-2 code to country name API function
+ *  @param $code
+ *    iso2 country code to search by.
+ * @return string
+ *  Returns country name as string.
+ */
+function countries_api_iso2_get_name($code) {
+  $_country = countries_api_iso2_get_country($code);
+
+  if(!is_null($_country)) {
+    return $_country['name'];
+  }
+
+  return null;
+}
+
+/**
+ * ISO 3166-1-alpha-3 code to country name API function
+ * @param $code
+ *  iso3 country code to search by.
+ * @return string
+ *  Returns country name as a string.
+ */
+function countries_api_iso3_get_name($code) {
+  $_country = countries_api_iso3_get_country($code);
+  if(!is_null($_country)) {
+    return $_country['name'];
+  }
+  return null;
+}
+
+/**
+ * ISO 3166-1-alpha-2 code to ISO 3166-1-alpha-3 code API function
+ * @param $code
+ *  iso2 country code to search by.
+ * @return string
+ *  Returns iso3 string value of country
+ */
+function countries_api_iso2_get_iso3($code) {
+  $_country = countries_api_iso2_get_country($code);
+  if(!is_null($_country)) {
+    return $_country['iso3'];
+  }
+  return null;
+}
+
+/**
+ * ISO 3166-1-alpha-3 code to ISO 3166-1-alpha-2 code API function
+ * @param $code
+ *  iso3 country code to search by.
+ * @return string
+ *  Returns iso2 string value of country
+ */
+function countries_api_iso3_get_iso2($code) {
+  $_country = countries_api_iso3_get_country($code);
+  if(!is_null($_country)) {
+    return $_country['iso2'];
+  }
+  return null;
+}
+
+/**
+ * Function to return a country by code and name.
+ * @param $code
+ *  The country code value (in iso2,iso3,name, or printable name format)
+ * @param $format
+ *  The format to return country by
+ * @return array of country
+ * 
+ */
+function _countries_api_iso_get_country($value, $format) {
+  $_value = trim(check_plain($value);
+  $_format = trim(check_plain($format);
+  $result = db_query("SELECT iso2, name, printable_name, iso3, numcode FROM {countries_api_countries} WHERE '%s' = '%s'",$_format,$_value);
+  return db_fetch_array($result); 
+}
+
+/**
+ * Countries list API function
+ *  @return array of all countries
+ */
+function countries_api_get_list() {
+  //array('name' => t('Afghanistan'), 'iso2' => 'AF', 'iso3' => 'AFG'),
+ 	$result = db_query("SELECT iso2, name, printable_name, iso3, numcode FROM {countries_api_countries}");
+	$countries = array();
+ 	while ($row = db_fetch_array($result)) {
+		$countries[] = $row;
+	}
+	return $countries;
+}
+
+/** Utility FUnctions **/
+
+/**
+* Function to import regions from CSV file
+* TODO: provide arguments for specifying csv files
+* TODO: setup permissions
+* @param $offset
+*   Int value for csv row offset.
+* @return void
+**/
+function countries_api_csv_import_countries($offset=1) {
+	//Prepopulate regions table
+  $handle = fopen(dirname(__FILE__) . "/data/countries.csv","r");
+  $index = 1;
+  while(($row = fgetcsv($handle,1024,",")) !== FALSE) {
+	//Create row variables
+	$iso2 = ($row[0]) ? $row[0] : "";
+	$name = ($row[1]) ? $row[1] : "";
+	$printable_name = ($row[2]) ? $row[2] : "";
+	$iso3 = ($row[3]) ? $row[3]  : "";
+	$numcode = ($row[4]) ? $row[4]  : "NULL";
+	if($index > $offset) {
+      db_query(
+          "INSERT INTO {country_pack_countries} (iso2,name,printable_name,iso3,numcode) 
+           VALUES('%s','%s','%s','%s',%s)",
+           $iso2, $name, $printable_name, $iso3, $numcode
+      );
+    }
+    $index++;
+  }
+  fclose($handle);
+  watchdog('countries_api',t("Pre-populated countries api data."));
+}
+
+/**
+* Function to import regions from CSV file
+* TODO: provide arguments for specifying csv files
+* TODO: Setup permissions
+* @param $offset
+*   Int value for csv row offset.
+**/
+function country_csv_import_regions($offset=1) {
+	//Prepopulate regions table
+  $handle = fopen(dirname(__FILE__) . "/data/regions.csv","r");
+  $index = 1;
+  while(($row = fgetcsv($handle,1024,",")) !== FALSE) {
+    //Create row variables
+	$iso = ($row[0]) ? $row[0] : "";
+	$name = ($row[1]) ? $row[1] : "";
+	$abbreviation = ($row[2]) ? $row[2] : "";
+	if($index > $offset) {
+      db_query(
+          "INSERT INTO {country_pack_regions} (rid,iso2,name,abbreviation) 
+           VALUES(%d,'%s','%s','%s')",
+           db_next_id('{country_pack_regions}_rid'),$iso2,$name,$abbreviation
+      );
+    }
+    $index++;
+  }
+  fclose($handle);
+  watchdog('country_pack',t("Pre-populated regions data."));
+}
+
+/**
+* Function to flush (empty) the countries and regions database
+**/
+function _countries_api_flush() {
+    db_query("DELETE FROM {country_pack_countries}");
+    db_query("DELETE FROM {country_pack_regions}");
+}
