@@ -139,7 +139,7 @@ function countries_api_iso3_get_iso2($code) {
 
 /**
  * Function to return a country by code and name.
- * @param $code
+ * @param $value
  *  The country code value (in iso2,iso3,name, or printable name format)
  * @param $format
  *  The format to return country by
@@ -147,19 +147,60 @@ function countries_api_iso3_get_iso2($code) {
  * 
  */
 function _countries_api_iso_get_country($value, $format) {
-  $_value = trim(check_plain($value);
-  $_format = trim(check_plain($format);
-  $result = db_query("SELECT iso2, name, printable_name, iso3, numcode FROM {countries_api_countries} WHERE '%s' = '%s'",$_format,$_value);
+  $value = trim(check_plain($value));
+  $format = trim(check_plain($format));
+  // Return false if format is invalid (saves a database hit!)
+  if(!countries_api_validate_format($format)) {
+    return false;
+  }
+  $result = db_query("SELECT iso2, name, printable_name, iso3, numcode FROM {countries_api_countries} WHERE %s = '%s'",$format,$value);
   return db_fetch_array($result); 
 }
 
 /**
- * Countries list API function
- *  @return array of all countries
+ * Function to return an associative array of countries with key/values based on args
+ * Can be used to get results for FAPI form options.
+ * @param $key_format
+ *  The format of the key (a value from countries_api_formats)
+ * @param $value_format
+ *  The format of teh value (a value from countries_api_formats)
+ * @return array
+ *  An associative array based on arguments
+**/
+function countries_api_get_array($key_format='iso2',$value_format='printable_name') {
+  //Validate args
+  if(!countries_api_validate_format($key_format)) {
+    return false;
+  }
+  if(!countries_api_validate_format($value_format)) {
+    return false;
+  }
+  $countries = countries_api_get_list();
+  $rows = array();
+  foreach($countries as $country) {
+    $rows[$country[$key_format]] = $country[$value_format];
+  }
+  return $rows;
+}
+
+/**
+ * Function for returning an associative array useful for FAPI select elements
+ * @param array
+ *  The first value in the array (defaults to '' => 'Please Choose')
+ * @return array
+ *  Returns an associative array in $country['iso2'] => $country['printable_name'] format.
+*/
+function countries_api_get_options_array($first_element = array('' => 'Please Choose')) {
+  return array_merge($first_element,countries_api_get_array('iso2','printable_name'));
+}
+
+/**
+ * Function to return an associative array of all countries.
+ * TODO: Cache results
+ *  @return associative array of all countries
  */
-function countries_api_get_list() {
-  //array('name' => t('Afghanistan'), 'iso2' => 'AF', 'iso3' => 'AFG'),
- 	$result = db_query("SELECT iso2, name, printable_name, iso3, numcode FROM {countries_api_countries}");
+function countries_api_get_list() {  
+ 	$result = db_query("SELECT iso2, iso3, name, printable_name, numcode FROM {countries_api_countries}");
 	$countries = array();
  	while ($row = db_fetch_array($result)) {
 		$countries[] = $row;
@@ -167,7 +208,27 @@ function countries_api_get_list() {
 	return $countries;
 }
 
-/** Utility FUnctions **/
+/** Utility Functions **/
+
+/**
+* Funtion to return available formats
+* @return array
+*   Returns an array of available formats
+**/
+function countries_api_get_formats() {
+  return array('iso2','iso3','name','printable_name', 'numcode');
+}
+
+/**
+* Function to validate format argument
+* @param $format
+*   Input format to validate
+* @return boolean
+*   Return if it is a valid format
+**/
+function countries_api_validate_format($format) {
+  return in_array($format,countries_api_get_formats());
+}
 
 /**
 * Function to import regions from CSV file
@@ -190,7 +251,7 @@ function countries_api_csv_import_countries($offset=1) {
 	$numcode = ($row[4]) ? $row[4]  : "NULL";
 	if($index > $offset) {
       db_query(
-          "INSERT INTO {country_pack_countries} (iso2,name,printable_name,iso3,numcode) 
+          "INSERT INTO {countries_api_countries} (iso2,name,printable_name,iso3,numcode) 
            VALUES('%s','%s','%s','%s',%s)",
            $iso2, $name, $printable_name, $iso3, $numcode
       );
@@ -208,18 +269,18 @@ function countries_api_csv_import_countries($offset=1) {
 * @param $offset
 *   Int value for csv row offset.
 **/
-function country_csv_import_regions($offset=1) {
+function countries_api_csv_import_regions($offset=1) {
 	//Prepopulate regions table
   $handle = fopen(dirname(__FILE__) . "/data/regions.csv","r");
   $index = 1;
   while(($row = fgetcsv($handle,1024,",")) !== FALSE) {
     //Create row variables
-	$iso = ($row[0]) ? $row[0] : "";
+	$iso2 = ($row[0]) ? $row[0] : "";
 	$name = ($row[1]) ? $row[1] : "";
 	$abbreviation = ($row[2]) ? $row[2] : "";
 	if($index > $offset) {
       db_query(
-          "INSERT INTO {country_pack_regions} (rid,iso2,name,abbreviation) 
+          "INSERT INTO {countries_api_regions} (rid,iso2,name,abbreviation) 
            VALUES(%d,'%s','%s','%s')",
            db_next_id('{country_pack_regions}_rid'),$iso2,$name,$abbreviation
       );
@@ -230,10 +291,20 @@ function country_csv_import_regions($offset=1) {
   watchdog('country_pack',t("Pre-populated regions data."));
 }
 
+/** 
+ * Implementation of hook_simpletest() 
+**/
+function countries_api_simpletest() {
+  $module_name = 'countries_api'; // Change this to your module name.
+  $dir = drupal_get_path('module', $module_name). '/tests';
+  $tests = file_scan_directory($dir, '\.test$');
+  return array_keys($tests);
+}
+
 /**
 * Function to flush (empty) the countries and regions database
 **/
 function _countries_api_flush() {
-    db_query("DELETE FROM {country_pack_countries}");
-    db_query("DELETE FROM {country_pack_regions}");
+    db_query("DELETE FROM {countries_api_countries}");
+    db_query("DELETE FROM {countries_api_regions}");
 }

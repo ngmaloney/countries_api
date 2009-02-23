@@ -15,7 +15,7 @@ function countries_api_install() {
         name varchar(80) NOT NULL,
         printable_name varchar(80) NOT NULL,
         numcode smallint(6),
-        PRIMARY KEY (iso)
+        PRIMARY KEY (iso2)
       ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
       //create regions db
       db_query("CREATE TABLE {countries_api_regions} (
