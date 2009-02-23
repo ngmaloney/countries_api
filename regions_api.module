@@ -1,0 +1,68 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_help()
+ * TODO: Refactor help so it is a seperate include (to make more manageable)
+ */
+function regions_api_help($section = '') {
+  // license path
+  $license = drupal_get_path('module', 'countries_api') . '/LICENSE.txt';
+
+  // switch over section
+  switch($section) {
+    // module
+    case 'admin/help#regions_api':
+      $content = "Help Section Coming Soon";
+    break;
+  }
+  return $content;
+}
+
+/**
+ * Function to get a region by iso2 country name
+ * @param $iso2 
+ *  A string corresponding to a regions ISO2 name.
+ * @return array|null
+ *  Returns an array of regions or NULL if no results found
+**/
+function regions_api_iso2_get_array($iso2) {
+  $result = db_query("SELECT rid, iso2, name, abbreviation FROM {regions_api_regions} WHERE iso2 = '%s", $iso2);
+	$regions = array();
+ 	while ($row = db_fetch_array($result)) {
+		$regions[] = $row;
+	}
+	if(count($regions) == 0) {
+	  return null;
+	}
+	return $regions;
+}
+
+/**
+* Function to import regions from CSV file
+* TODO: provide arguments for specifying csv files
+* TODO: Setup permissions
+* @param $offset
+*   Int value for csv row offset.
+**/
+function regions_api_csv_import_regions($offset=1) {
+	//Prepopulate regions table
+  $handle = fopen(dirname(__FILE__) . "/data/regions.csv","r");
+  $index = 1;
+  while(($row = fgetcsv($handle,1024,",")) !== FALSE) {
+    //Create row variables
+	$iso2 = ($row[0]) ? $row[0] : "";
+	$name = ($row[1]) ? $row[1] : "";
+	$abbreviation = ($row[2]) ? $row[2] : "";
+	if($index > $offset) {
+      db_query(
+          "INSERT INTO {regions_api_regions} (rid,iso2,name,abbreviation) 
+           VALUES(%d,'%s','%s','%s')",
+           db_next_id('{regions_api}_rid'),$iso2,$name,$abbreviation
+      );
+    }
+    $index++;
+  }
+  fclose($handle);
+  watchdog('regions_api',t("Pre-populated regions data."));
+}

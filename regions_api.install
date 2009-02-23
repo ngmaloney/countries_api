@@ -4,29 +4,28 @@
 /**
  * Implementation of hook_install().
  */
-function countries_api_install() {
+function regions_api_install() {
  switch ($GLOBALS['db_type']) {
     case 'mysqli':
     case 'mysql':
-      //create countries db
-      db_query("CREATE TABLE {countries_api_countries} (
+      //create regions db
+      db_query("CREATE TABLE {regions_api_regions} (
+        rid INT(10) UNSIGNED NOT NULL DEFAULT '0',
         iso2 char(2) NOT NULL DEFAULT '',
-        iso3 char(3) NOT NULL,
         name varchar(80) NOT NULL,
-        printable_name varchar(80) NOT NULL,
-        numcode smallint(6),
-        PRIMARY KEY (iso2)
+        abbreviation varchar(5),
+        PRIMARY KEY (rid)
       ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
     break;
   }
   //Include country module include for initial data import
-  require_once(dirname(__FILE__) . '/countries_api.module');
-  countries_api_csv_import_countries();
+  require_once(dirname(__FILE__) . '/regions_api.module');
+  regions_api_csv_import_regions();
 }
 
 /**
  * Implementation of hook_uninstall().
  */
 function countries_api_uninstall() {
-	db_query('DROP TABLE {countries_api_countries}');
+	db_query('DROP TABLE {regions_api_regions}');
 }

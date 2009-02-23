@@ -262,35 +262,6 @@ function countries_api_csv_import_countries($offset=1) {
   watchdog('countries_api',t("Pre-populated countries api data."));
 }
 
-/**
-* Function to import regions from CSV file
-* TODO: provide arguments for specifying csv files
-* TODO: Setup permissions
-* @param $offset
-*   Int value for csv row offset.
-**/
-function countries_api_csv_import_regions($offset=1) {
-	//Prepopulate regions table
-  $handle = fopen(dirname(__FILE__) . "/data/regions.csv","r");
-  $index = 1;
-  while(($row = fgetcsv($handle,1024,",")) !== FALSE) {
-    //Create row variables
-	$iso2 = ($row[0]) ? $row[0] : "";
-	$name = ($row[1]) ? $row[1] : "";
-	$abbreviation = ($row[2]) ? $row[2] : "";
-	if($index > $offset) {
-      db_query(
-          "INSERT INTO {countries_api_regions} (rid,iso2,name,abbreviation) 
-           VALUES(%d,'%s','%s','%s')",
-           db_next_id('{country_pack_regions}_rid'),$iso2,$name,$abbreviation
-      );
-    }
-    $index++;
-  }
-  fclose($handle);
-  watchdog('country_pack',t("Pre-populated regions data."));
-}
-
 /** 
  * Implementation of hook_simpletest() 
 **/

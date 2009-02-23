@@ -1,0 +1,24 @@
+<?php
+
+//Define working test case variables
+  defined('VALID_ISO2','US');
+
+class RegionsApiTest extends DrupalTestCase {
+    
+  function get_info() {
+    return array(
+      'name' => t('Regions API tests'),
+      'desc' => t('Tests regions api functions'),
+      'group' => t('regions_api tests')
+    );
+  }
+  
+  /**
+  * Function to test countries_api_get_formats() results
+  **/
+  function test_regions_api_iso2_get_array() {
+    $regions = regions_api_iso2_get_array(VALID_ISO2);
+    $this->assertNotNull($regions, 'Checking regions api array results. %s');
+  }
+}
+?>
