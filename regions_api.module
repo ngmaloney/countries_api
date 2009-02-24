@@ -27,10 +27,29 @@ function regions_api_help($section = '') {
  *  Returns an array of regions or NULL if no results found
 **/
 function regions_api_iso2_get_array($iso2) {
-  $result = db_query("SELECT rid, iso2, name, abbreviation FROM {regions_api_regions} WHERE iso2 = '%s", $iso2);
+  $result = db_query("SELECT rid, iso2, name, abbreviation FROM {regions_api_regions} WHERE iso2 = '%s'", $iso2);
 	$regions = array();
  	while ($row = db_fetch_array($result)) {
 		$regions[] = $row;
+	}
+	if(count($regions) == 0) {
+	  return null;
+	}
+	return $regions;
+}
+
+/**
+ * Funtion to get an options array of country regions
+ * @param $iso2 
+ *  A string corresponding to a regions ISO2 name.
+**/
+function regions_api_iso2_get_options_array($iso2) {
+ $result = db_query("SELECT name, abbreviation FROM {regions_api_regions} WHERE iso2 = '%s'", $iso2);
+ $regions = array();
+ 	while ($row = db_fetch_array($result)) {
+ 	  $key = (strlen($row['abbreviation']) > 0) ? $row['abbreviation'] : $row['name'];
+ 	  $value = $row['name'];
+		$regions[$key] = $value;
 	}
 	if(count($regions) == 0) {
 	  return null;

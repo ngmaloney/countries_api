@@ -1,7 +1,7 @@
 <?php
 
 //Define working test case variables
-  defined('VALID_ISO2','US');
+  define('VALID_ISO2','US');
 
 class RegionsApiTest extends DrupalTestCase {
     

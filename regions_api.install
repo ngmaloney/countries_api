@@ -26,6 +26,6 @@ function regions_api_install() {
 /**
  * Implementation of hook_uninstall().
  */
-function countries_api_uninstall() {
+function regions_api_uninstall() {
 	db_query('DROP TABLE {regions_api_regions}');
 }
