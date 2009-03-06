@@ -1,4 +1,0 @@
-; $Id$
-name = "Regions codes API"
-description = "This module provides an API for accessing country region (province/state) data."
-package = "Location"

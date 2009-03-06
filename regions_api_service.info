@@ -1,5 +1,0 @@
-; $Id$
-name = Regions API Service
-description = Provides a regions api service.
-package = Services - services
-dependencies = services regions_api
