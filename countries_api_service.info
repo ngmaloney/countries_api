@@ -1,0 +1,5 @@
+; $Id$
+name = Countries API Service
+description = Provides a countries api service.
+package = Services - services
+dependencies = services countries_api
